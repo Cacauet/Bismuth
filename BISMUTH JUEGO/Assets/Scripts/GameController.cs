@@ -36,12 +36,27 @@ public class GameController : MonoBehaviour
 
     // General Values
     private int currentScene = 0;
-    int destScene;
-    GameState state = GameState.MAIN_MENU;
+    private int destScene;
+    private GameState state = GameState.MAIN_MENU;
+    private bool waitForTick;
+
+    // Level Control
+    private int maxStars;
+    private PortalController[] portals;
+    private int redKeys;
+    private int blueKeys;
+    private int blackKeys;
+
+    private float gameTimer;
+    private int currentStars;
+    private int currentKeys;
+
+    // UI
+
 
     void Start ()
     {
-        // Set GameController instance (for scene conservation)
+        // Set GameController static instance (for scene conservation)
         if (instance != null)
         {
             Destroy(gameObject);
@@ -65,9 +80,47 @@ public class GameController : MonoBehaviour
         if (fading)
             HandleFading();
 
-        if(currentScene != 0) // not in Main Menu
+        switch (state)
         {
+            case GameState.MAIN_MENU:
+                {
+                    break;
+                }
+            case GameState.TRANSITION_TO_PAUSE:
+                {
+                    if (waitForTick)
+                        waitForTick = false;
+                    else
+                        state = GameState.PAUSE;
 
+                    break;
+                }
+            case GameState.PAUSE:
+                {
+                    break;
+                }
+            case GameState.TRANSITION_TO_PLAY:
+                {
+                    if (waitForTick)
+                        waitForTick = false;
+                    else
+                        state = GameState.PLAY;
+
+                    break;
+                }
+            case GameState.PLAY:
+                {
+                    gameTimer += Time.deltaTime;
+                    break;
+                }
+            case GameState.CUTSCENE:
+                {
+                    break;
+                }
+            default:
+                {
+                    break;
+                }
         }
     }
 
@@ -88,7 +141,6 @@ public class GameController : MonoBehaviour
             else // fader is transparent
             {
                 fading = false;
-                GameObject.Find("Main Camera").GetComponent<CameraCutSceneController>().StartCutscene(Cutscene.INTRO);
             }
         }
         else
@@ -100,6 +152,107 @@ public class GameController : MonoBehaviour
         }
     }
 
+    // Game Control =============================================================================================================================
+
+    public void SetLevelSpecs(int s, PortalController[] p)
+    {
+        maxStars = s;
+        portals = p;
+        gameTimer = 0f;
+        currentStars = currentKeys = redKeys = blueKeys = blackKeys = 0;
+    }
+
+    public void AddStar(string tag, StarController sc)
+    {
+        bool starAdded = false;
+
+        switch (tag)
+        {
+            case "WhiteStar":
+                {
+                    currentStars++;
+                    sc.Unlock();
+                    starAdded = true;
+                    break;
+                }
+            case "RedStar":
+                {
+                    if(redKeys > 0)
+                    {
+                        redKeys--;
+                        currentStars++;
+                        sc.Unlock();
+                        starAdded = true;
+                    }
+                    break;
+                }
+            case "BlueStar":
+                {
+                    if (blueKeys > 0)
+                    {
+                        blueKeys--;
+                        currentStars++;
+                        sc.Unlock();
+                        starAdded = true;
+                    }
+                    break;
+                }
+            case "BlackStar":
+                {
+                    if (blackKeys > 0)
+                    {
+                        blackKeys--;
+                        currentStars++;
+                        sc.Unlock();
+                        starAdded = true;
+                    }
+                    break;
+                }
+            default:
+                {
+                    break;
+                }
+        }
+
+        if(starAdded) // check for portals to open
+        {
+            if(maxStars == currentStars)
+            {
+                // WIN CONDITION TRIGGERED
+                StartCutScene(Cutscene.FINAL);
+
+
+            }
+            else
+            {
+                foreach (PortalController pc in portals)
+                {
+                    if (pc.value == currentKeys)
+                    {
+                        StartCutScene(Cutscene.WALL_SHOW);
+                        pc.Open();
+                    }
+                }
+            }
+        }
+    }
+
+    public void AddKey(GameObject key)
+    {
+        switch (key.tag)
+        {
+            case   "RedKey": redKeys++; break;
+            case  "BlueKey": blueKeys++; break;
+            case "BlackKey": blackKeys++; break;
+            default: break;
+        }
+
+        key.SetActive(false);
+        currentKeys = redKeys + blueKeys + blackKeys;
+    }
+
+
+    // UI Control =============================================================================================================================
 
     // Game Utility =============================================================================================================================
 
@@ -111,6 +264,9 @@ public class GameController : MonoBehaviour
     public void SetState(GameState newState)
     {
         state = newState;
+
+        if (state == GameState.TRANSITION_TO_PAUSE || state == GameState.TRANSITION_TO_PLAY)
+            waitForTick = true;
     }
 
     public void ChangeSceneNow(int nextScene)
@@ -132,7 +288,12 @@ public class GameController : MonoBehaviour
         fading = true;
         originAlpha = 0f;
         destAlpha = 1f;
-}
+    }
+
+    public void StartCutScene(Cutscene cs)
+    {
+        Camera.main.GetComponent<CameraCutSceneController>().StartCutscene(cs, this);
+    }
 
     // Data Utility =============================================================================================================================
 

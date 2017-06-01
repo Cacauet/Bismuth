@@ -5,10 +5,17 @@ using UnityEngine;
 public class GameControllerSpawner : MonoBehaviour
 {
     private GameController gc = null;
-
     public GameObject gcPrefab;
     public int currentScene;
-    public GameState initState = GameState.PLAY;
+
+    // Level Specs
+    public StarController[] stars;
+    public PortalController[] portals;
+    public GameObject[] keys;
+
+    public Transform player;
+    private Vector3 playerPos;
+    private Quaternion playerRot;
 
     void Awake()
     {
@@ -20,22 +27,35 @@ public class GameControllerSpawner : MonoBehaviour
             Debug.Log("GameController NOT FOUND");
             gameController = Instantiate(gcPrefab);
             gameController.transform.parent = transform;
-            gameController.name = "GameController";
-
-            gc = gameController.GetComponent<GameController>();
-            gc.SetState(initState);
+            gameController.tag = gameController.name = "GameController";
         }
         else
         {
             Debug.Log("GameController FOUND");
         }
+
+        gc = gameController.GetComponent<GameController>();
+        gc.SetLevelSpecs(stars.Length, portals);
+        gc.StartCutScene(Cutscene.INTRO);
+
+        playerPos = player.position;
+        playerRot = player.rotation;
     }
 
-    void Update()
+    public void ResetLevel()
     {
-        if(gc.GetState() == GameState.PLAY)
-        {
-            GameObject.Find("Main Camera").GetComponent<CameraCutSceneController>().StartCutscene(Cutscene.INTRO);
-        }
+        // Reset objects
+        foreach (StarController sc in stars)
+            sc.Reset();
+
+        foreach (PortalController pc in portals)
+            pc.Reset();
+
+        foreach (GameObject key in keys)
+            key.SetActive(true);
+
+        // Reset Player
+        player.position = playerPos;
+        player.rotation = playerRot;
     }
 }

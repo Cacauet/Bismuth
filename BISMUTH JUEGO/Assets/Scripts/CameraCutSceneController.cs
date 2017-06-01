@@ -36,37 +36,41 @@ public class CameraCutSceneController : MonoBehaviour
 
         if (gc.GetState() == GameState.CUTSCENE)
         {
-
-            Debug.Log("IN CUTSCENE: " + currentCutscene);
-
-            switch(currentCutscene)
+            if (Input.GetKey(KeyCode.Space))
             {
-                case Cutscene.INTRO:
-                    {
-                        if(!HandleCutscene(introTransforms, introTransitionDurations))
-                            gc.SetState(GameState.PLAY);
-
-                        break;
-                    }
-                case Cutscene.WALL_SHOW:
-                    {
-                        if (!HandleCutscene(wallTransforms, wallTransitionDurations))
-                            gc.SetState(GameState.PLAY);
-                        
-                        break;
-                    }
-                case Cutscene.FINAL:
-                    {
-                        if (!HandleCutscene(finalTransforms, finalTransitionDurations))
-                            gc.SetState(GameState.PLAY);
-                        
-                        break;
-                    }
-                default:
-                    break;
+                gc.SetState(GameState.TRANSITION_TO_PLAY);
             }
+            else
+            {
+                switch (currentCutscene)
+                {
+                    case Cutscene.INTRO:
+                        {
+                            if (!HandleCutscene(introTransforms, introTransitionDurations))
+                            {
+                                gc.SetState(GameState.PLAY);
+                            }
 
-            
+                            break;
+                        }
+                    case Cutscene.WALL_SHOW:
+                        {
+                            if (!HandleCutscene(wallTransforms, wallTransitionDurations))
+                                gc.SetState(GameState.PLAY);
+
+                            break;
+                        }
+                    case Cutscene.FINAL:
+                        {
+                            if (!HandleCutscene(finalTransforms, finalTransitionDurations))
+                                gc.SetState(GameState.PLAY);
+
+                            break;
+                        }
+                    default:
+                        break;
+                }
+            }
         }
     }
 
@@ -77,7 +81,7 @@ public class CameraCutSceneController : MonoBehaviour
 
         if(transitionCounter == transforms.Length - 1) // transition finished
         {
-            Debug.Log("CAMERA MOVEMENT FINISHED. Length: " + transforms.Length);
+            Debug.Log("CAMERA MOVEMENT FINISHED: " + currentCutscene);
             ret = false;
         }
         else
@@ -111,8 +115,9 @@ public class CameraCutSceneController : MonoBehaviour
     }
 
 
-    public void StartCutscene(Cutscene cutscene)
+    public void StartCutscene(Cutscene cutscene, GameController _gc)
     {
+        gc = _gc;
         transitionTimer = 0f;
         transitionCounter = 0;
         currentCutscene = cutscene;

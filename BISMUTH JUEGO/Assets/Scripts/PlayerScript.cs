@@ -41,15 +41,26 @@ public class PlayerScript : MonoBehaviour
             if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S))
                 transform.Translate(Vector3.forward * -movSpeed * Time.deltaTime);
         }
-        else
-        {
-            Debug.Log(gc.GetState());
-        }
     }
 
-	void OnTriggerEnter(Collider other)
+    // Item Collisions =============================================================================================================================
+
+    void OnTriggerEnter(Collider other)
     {
-        
+        if (other.tag == "Untagged")
+            return;
+
+        if (other.tag == "WhiteStar" || other.tag == "RedStar" || other.tag == "BlueStar" || other.tag == "BlackStar")
+        {
+            StarController sc = other.GetComponent<StarController>();
+
+            if(sc != null && !sc.Unlocked())
+                gc.AddStar(other.tag, sc);
+        }
+        else if(other.tag == "RedKey" || other.tag == "BlueKey" || other.tag == "BlackKey")
+        {
+            gc.AddKey(other.gameObject);
+        }
     }
 
 
@@ -57,7 +68,7 @@ public class PlayerScript : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (onFloor && Input.GetKeyDown(KeyCode.Space))
+        if (onFloor && Input.GetKeyDown(KeyCode.Space) && gc.GetState() == GameState.PLAY)
         {
             rb.AddForce(new Vector3(0, jumpForce, 0), ForceMode.Impulse);
             //onFloor = false;
